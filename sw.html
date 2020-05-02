@@ -1,7 +1,9 @@
 
 <!--
+	mitm.html is the lite "man in the middle"
+
 	This is only meant to signal the opener's messageChannel to
-	the service worker - when that is done this can be closed
+	the service worker - when that is done this mitm can be closed
     but it's better to keep it alive since this also stops the sw
     from restarting
 
@@ -62,18 +64,18 @@ function onMessage (event) {
   // It's important to have a messageChannel, don't want to interfere
   // with other simultaneous downloads
   if (!ports || !ports.length) {
-    throw new TypeError("You didn't send a messageChannel")
+    throw new TypeError("[StreamSaver] You didn't send a messageChannel")
   }
 
   if (typeof data !== 'object') {
-    throw new TypeError("You didn't send a object")
+    throw new TypeError("[StreamSaver] You didn't send a object")
   }
 
-  // the default public service worker for SS is shared among others.
+  // the default public service worker for StreamSaver is shared among others.
   // so all download links needs to be prefixed to avoid any other conflict
   data.origin = origin
 
-  // if we ever (in some feature versoin of ss) would like to
+  // if we ever (in some feature versoin of streamsaver) would like to
   // redirect back to the page of who initiated a http request
   data.referrer = data.referrer || document.referrer || origin
 
@@ -81,12 +83,12 @@ function onMessage (event) {
   data.streamSaverVersion = new URLSearchParams(location.search).get('version')
 
   if (data.streamSaverVersion === '1.2.0') {
-    console.warn('please update ss')
+    console.warn('[StreamSaver] please update streamsaver')
   }
 
   /** @since v2.0.0 */
   if (!data.headers) {
-    console.warn("pass `data.headers` that you would like to pass along to the service worker\nit should be a 2D array or a key/val object that fetch's Headers api accepts")
+    console.warn("[StreamSaver] pass `data.headers` that you would like to pass along to the service worker\nit should be a 2D array or a key/val object that fetch's Headers api accepts")
   } else {
     // test if it's correct
     // should thorw a typeError if not
@@ -95,24 +97,24 @@ function onMessage (event) {
 
   /** @since v2.0.0 */
   if (typeof data.filename === 'string') {
-    console.warn("You shouldn't send `data.filename` anymore. It should be included in the Content-Disposition header option")
+    console.warn("[StreamSaver] You shouldn't send `data.filename` anymore. It should be included in the Content-Disposition header option")
     // Do what File constructor do with fileNames
     data.filename = data.filename.replace(/\//g, ':')
   }
 
   /** @since v2.0.0 */
   if (data.size) {
-    console.warn("You shouldn't send `data.size` anymore. It should be included in the content-length header option")
+    console.warn("[StreamSaver] You shouldn't send `data.size` anymore. It should be included in the content-length header option")
   }
 
   /** @since v2.0.0 */
   if (data.readableStream) {
-    console.warn("")
+    console.warn("[StreamSaver] You should send the readableStream in the messageChannel, not throught mitm")
   }
 
   /** @since v2.0.0 */
   if (!data.pathname) {
-    console.warn("Please send `data.pathname` (eg: /pictures/summer.jpg)")
+    console.warn("[StreamSaver] Please send `data.pathname` (eg: /pictures/summer.jpg)")
     data.pathname = Math.random().toString().slice(-6) + '/' + data.filename
   }
 
@@ -126,7 +128,7 @@ function onMessage (event) {
   data.url = new URL(`${scope + org}/${data.pathname}`).toString()
 
   if (!data.url.startsWith(`${scope + org}/`)) {
-    throw new TypeError('bad `data.pathname`')
+    throw new TypeError('[StreamSaver] bad `data.pathname`')
   }
 
   // This sends the message data as well as transferring
